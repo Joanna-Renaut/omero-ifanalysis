@@ -7,13 +7,17 @@ Install via
 
     pip install -e <path to repo on computer>
 
+Next:
+
+    `pip install scipy`
+    
 Create 3 directories, one for each biological repeat call these:
     
-`repeat-1`
+    `repeat-1`
 
-`repeat-2`
+    `repeat-2`
 
-`repeat-3`
+    `repeat-3`
 
 place your Omero final data files in the appropriate folder.
 
