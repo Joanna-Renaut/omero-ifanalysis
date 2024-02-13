@@ -3,6 +3,13 @@
 ### IFAnalysis
 
 First get the IFAnalysis pipeline by Helfrid Hocchegger: https://github.com/HocheggerLab/IFanalysis
+
+Create your virtual environment e.g for mac:
+
+    `python<version> -m venv venv`
+
+    `source venv/bin/activate`
+
 Install via
 
     pip install -e <path to repo on computer>
