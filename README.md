@@ -12,7 +12,7 @@ Create your virtual environment e.g for mac:
 
 Install via
 
-    pip install -e <path to repo on computer>
+    pip install -e <path to IFAnalysis folder on computer>
 
 Next:
 
