@@ -77,25 +77,6 @@ if __name__ == '__main__':
 
         processed_conditions = set()
 
-        # # Step 1: Calculate the sum of 'abs_cell_count' for each (experiment, condition, genotype) grouping
-        # grouped = df_counts.groupby(['experiment', 'condition', 'genotype'])['abs_cell_count'].sum().reset_index()
-        #
-        # grouped['abs_cell_count_sem'] = df_counts.groupby(['experiment', 'condition', 'genotype'])[
-        #     'abs_cell_count'].transform(lambda x: x.sem())
-        #
-        # # Step 2: Merge control counts back for ratio calculations
-        # control_counts = grouped[grouped['genotype'] == CONTROL_GENOTYPE][
-        #     ['experiment', 'condition', 'abs_cell_count']].rename(columns={'abs_cell_count': 'control_count'})
-        # grouped_with_control = pd.merge(grouped, control_counts, on=['experiment', 'condition'])
-        #
-        # # Step 3: Calculate ratios, handling the control genotype case
-        # grouped_with_control['ratio'] = grouped_with_control.apply(
-        #     lambda row: row['abs_cell_count'] / row['control_count'] if row['genotype'] != CONTROL_GENOTYPE else 1,
-        #     axis=1)
-        #
-        # grouped_with_control['ratio_sem'] = grouped_with_control.groupby(['experiment', 'condition', 'genotype'])[
-        #     'ratio'].transform(lambda x: x.sem())
-
         # Filter out control and experimental groups
         control_df = df_counts[df_counts['genotype'] == CONTROL_GENOTYPE]
         # experimental_df = df_counts[df_counts['genotype'] != CONTROL_GENOTYPE]
@@ -103,42 +84,31 @@ if __name__ == '__main__':
         grouped = df_counts.groupby(['experiment', 'condition', 'genotype'])['abs_cell_count']
         df_counts['abs_cell_count_sem'] = grouped.transform(lambda x: x.sem())
 
-        # Step 1: Merge experimental data with control data, including WT with itself
+        # Merge experimental data with control data, including WT with itself
         merged_df = pd.merge(df_counts, control_df[['experiment', 'condition', 'abs_cell_count']],
                              on=['experiment', 'condition'], suffixes=('', '_ctrl'))
 
-        # Step 2: Calculate ratios, setting WT against itself to have a meaningful value (e.g., 1)
+        # Calculate ratios, setting WT against itself to have a meaningful value (e.g., 1)
         merged_df['ratio'] = np.where(merged_df['genotype'] == CONTROL_GENOTYPE, 1,
                                       merged_df['abs_cell_count'] / merged_df['abs_cell_count_ctrl'])
 
-        # Step 3: Prepare the final DataFrame for plotting
+        # Prepare the final DataFrame for plotting
         final_plot_df = merged_df[['experiment', 'condition', 'genotype', 'ratio', 'abs_cell_count']].copy()
+        final_plot_df.rename(columns={'genotype_exp': 'genotype'}, inplace=True)
 
-        # Step 4: Sorting and selection based on conditions
-        # Assuming `custom_sort` and `ITEMS_TO_ADD` are defined elsewhere in your code
+        # Sorting and selection based on conditions
         sorted_values = sorted(merged_df['condition'].unique(), key=custom_sort)
         SELECTED_CONDITIONS = sorted_values
-
-        # Prepare the final DataFrame for plotting
-        # final_plot_df = merged_df[['experiment', 'condition', 'genotype_exp', 'ratio']].copy()
-        final_plot_df.rename(columns={'genotype_exp': 'genotype'}, inplace=True)
 
         # Sort by condition using custom_sort for plotting
         final_plot_df['condition'] = pd.Categorical(final_plot_df['condition'], categories=sorted_values, ordered=True)
         final_plot_df.sort_values(by=['condition', 'genotype'], inplace=True)
 
-        # # Identify conditions based on mean ratios
-        # mean_ratios = conditions_df.groupby('condition', observed=True)['ratio'].mean()
-        # conditions = [condition for condition in mean_ratios.index if mean_ratios[condition] < 0.9]
-        # conditions = ITEMS_TO_ADD + conditions
-        #
-        # # Filter df_counts for the selected conditions
-        # df_hits_counts = df[df['condition'].isin(conditions)]
-
         # Print out the first two colors for verification
         print("Color at index 0:", colors[0])
         print("Color at index 1:", colors[1])
         unique_genotypes = final_plot_df['genotype'].unique()
+
         # Check order of categories in your data
         print("Unique genotypes in order:", unique_genotypes)
 
@@ -146,23 +116,24 @@ if __name__ == '__main__':
 
         columns = ['intensity_mean_Casp3/7_nucleus', 'intensity_mean_p21_nucleus',
                    'intensity_mean_yH2A.X_nucleus']
+
         intensity_plot(df, selected_conds, columns, title='Intensity Plot, WT', hue='genotype')
 
         # Get unique genotypes
         unique_genotypes = list(final_plot_df['genotype'].unique())
 
-        # Extract unique conditions from your DataFrame
+        # Extract unique conditions
         unique_conditions = list(final_plot_df['condition'].unique())
 
-        # Separate control and non-control conditions based on your criteria
+        # Separate control and non-control conditions based on criteria
         non_control_conditions = [cond for cond in unique_conditions if cond not in ALL_CONTROLS]
 
         # Combine the lists, ensuring control conditions are first
         sorted_conditions = ALL_CONTROLS + non_control_conditions
 
-        # If there are more genotypes than colors, you might repeat colors or find another solution
+        # set colours for figures
         if len(unique_genotypes) > len(colors):
-            # Option 1: Repeat colors. Not ideal if you have many more genotypes than colors.
+            # Option 1: Repeat colors
             extended_colors = colors * (len(unique_genotypes) // len(colors) + 1)
         else:
             extended_colors = colors
@@ -179,14 +150,14 @@ if __name__ == '__main__':
         sns.barplot(x='condition', y='ratio', hue='genotype', data=final_plot_df, dodge=True,
                     hue_order=hue_order, order=sorted_conditions)
 
-        # Customizations
-        plt.axhline(y=0.9, color='gray', linestyle='--', linewidth=1)
+        plt.axhline(y=0.9, color='gray', linestyle='--', linewidth=1)  # add line at the desired ratio level
         plt.xticks(rotation=90)
         plt.tight_layout()
         ax.legend(loc='upper right')
         save_fig(fig, repeat_path, f'screen{repeat_number}_ratios')
         plt.savefig(f'{repeat_path}/screen{repeat_number}_ratios.png', dpi=600)
 
+        # create these figures for each genotype (cell line) in the experiment
         for genotype in unique_genotypes:
 
             df1 = df[df.genotype == 'WT']
@@ -200,10 +171,10 @@ if __name__ == '__main__':
             combplot_hist(df1_cc, selected_conds, 'CellCycle Histogram, WT')
             combplot_hist(df2_cc, selected_conds, f'CellCycle Histogram, {genotype}')
 
-            # Extract unique conditions from your DataFrame
+            # Extract unique conditions
             unique_conditions = list(final_plot_df['condition'].unique())
 
-            # Separate control and non-control conditions based on your criteria
+            # Separate control and non-control conditions based on criteria
             non_control_conditions = [cond for cond in unique_conditions if cond not in ALL_CONTROLS]
 
             # Combine the lists, ensuring control conditions are first
@@ -222,6 +193,7 @@ if __name__ == '__main__':
             for i, geno in enumerate(hue_order):
                 subset = final_plot_df[final_plot_df['genotype'] == geno]
                 positions = np.arange(len(sorted_values)) + (i * bar_width) - correction_factor
+
                 # Check if positions and subset lengths match before plotting
                 if not subset.empty and len(positions) == len(subset):
 
@@ -233,7 +205,6 @@ if __name__ == '__main__':
                                  color='black', capsize=3, elinewidth=1)
 
             save_fig(fig, repeat_path, f'screen{repeat_number}_hits_abscounts')
-            # Adjust file saving as needed
             plt.savefig(f'{repeat_path}/screen{repeat_number}_hits_abscounts.png', dpi=600)
 
         # Aggregate abs_cell_count by experiment, condition, and genotype to get mean values
@@ -254,7 +225,7 @@ if __name__ == '__main__':
         # Now, merged_aggregated_df contains aggregated abs_cell_count and calculated ratios
         final_data = merged_aggregated_df[['experiment', 'condition', 'genotype', 'abs_cell_count', 'ratio']].copy()
 
-        # Sorting by condition as per your custom sort for plotting and analysis purposes
+        # Sorting by condition as per custom sort for plotting and analysis purposes
         final_data['condition'] = pd.Categorical(final_data['condition'], categories=sorted_values, ordered=True)
         final_data.sort_values(by=['condition', 'genotype'], inplace=True)
 
@@ -265,22 +236,17 @@ if __name__ == '__main__':
     stats_dir.mkdir(exist_ok=True)
     final_files = final_data_dir.glob('*.csv')
     analyses_data = pd.concat([pd.read_csv(f) for f in final_files])
-    # print(analyses_data.head())
     analyses_data['abs_cell_count'] = pd.to_numeric(analyses_data['abs_cell_count'], errors='coerce')
     analyses_data['ratio'] = pd.to_numeric(analyses_data['ratio'], errors='coerce')
-    # Step 2: Aggregate data to calculate means
+    # Aggregate data to calculate means
     cell_count_means = analyses_data.groupby(['experiment', 'condition'])['abs_cell_count'].mean().reset_index()
-    # print(cell_count_means)
     cell_count_means.to_csv(stats_dir / 'means_of_abs_cell_count.csv', index=False)
     ratio_means = analyses_data.groupby(['experiment', 'condition'])['ratio'].mean().reset_index()
-    # print(ratio_means)
     ratio_means.to_csv(stats_dir / 'means_of_relative_cell_count.csv', index=False)
-    # Step 3: Calculate standard deviations
+    # Calculate standard deviations
     cell_count_stds = analyses_data.groupby(['experiment', 'condition'])['abs_cell_count'].std().reset_index()
-    # print(cell_count_stds)
     cell_count_stds.to_csv(stats_dir / 'std_of_abs_cell_count.csv', index=False)
     ratio_stds = analyses_data.groupby(['experiment', 'condition'])['ratio'].std().reset_index()
-    # print(ratio_stds)
     ratio_stds.to_csv(stats_dir / 'std_of_relative_cell_count.csv', index=False)
     print('Means and std saved to csv')
 
