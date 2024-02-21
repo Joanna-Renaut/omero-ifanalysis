@@ -79,7 +79,6 @@ if __name__ == '__main__':
 
         # Filter out control and experimental groups
         control_df = df_counts[df_counts['genotype'] == CONTROL_GENOTYPE]
-        # experimental_df = df_counts[df_counts['genotype'] != CONTROL_GENOTYPE]
 
         grouped = df_counts.groupby(['experiment', 'condition', 'genotype'])['abs_cell_count']
         df_counts['abs_cell_count_sem'] = grouped.transform(lambda x: x.sem())
@@ -133,7 +132,7 @@ if __name__ == '__main__':
 
         # set colours for figures
         if len(unique_genotypes) > len(colors):
-            # Option 1: Repeat colors
+            # Repeat colors
             extended_colors = colors * (len(unique_genotypes) // len(colors) + 1)
         else:
             extended_colors = colors
@@ -238,11 +237,13 @@ if __name__ == '__main__':
     analyses_data = pd.concat([pd.read_csv(f) for f in final_files])
     analyses_data['abs_cell_count'] = pd.to_numeric(analyses_data['abs_cell_count'], errors='coerce')
     analyses_data['ratio'] = pd.to_numeric(analyses_data['ratio'], errors='coerce')
+
     # Aggregate data to calculate means
     cell_count_means = analyses_data.groupby(['experiment', 'condition'])['abs_cell_count'].mean().reset_index()
     cell_count_means.to_csv(stats_dir / 'means_of_abs_cell_count.csv', index=False)
     ratio_means = analyses_data.groupby(['experiment', 'condition'])['ratio'].mean().reset_index()
     ratio_means.to_csv(stats_dir / 'means_of_relative_cell_count.csv', index=False)
+
     # Calculate standard deviations
     cell_count_stds = analyses_data.groupby(['experiment', 'condition'])['abs_cell_count'].std().reset_index()
     cell_count_stds.to_csv(stats_dir / 'std_of_abs_cell_count.csv', index=False)
