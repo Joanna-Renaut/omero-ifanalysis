@@ -6,9 +6,9 @@ First get the IFAnalysis pipeline by Helfrid Hocchegger: https://github.com/Hoch
 
 Create your virtual environment e.g for mac:
 
-    `python<version> -m venv venv`
+    python<version> -m venv venv
 
-    `source venv/bin/activate`
+    source venv/bin/activate
 
 Install via
 
@@ -16,15 +16,15 @@ Install via
 
 Next:
 
-    `pip install scipy`
+    pip install scipy
     
 Create 3 directories, one for each biological repeat call these:
     
-    `repeat-1`
+    repeat-1
 
-    `repeat-2`
+    repeat-2
 
-    `repeat-3`
+    repeat-3
 
 place your Omero final data files in the appropriate folder.
 
