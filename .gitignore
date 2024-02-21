@@ -6,3 +6,4 @@ stats/
 *.png
 *.pdf
 .idea/
+.DS_Store

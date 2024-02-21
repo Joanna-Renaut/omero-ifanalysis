@@ -28,6 +28,8 @@ Create 3 directories, one for each biological repeat call these:
 
 place your Omero final data files in the appropriate folder.
 
+In the code on line 65, enter your control conditions in the order you would like them to appear in figures.
+
 Run the analysis.
 
 You will have multiple figures, a final csv of the abs cell counts and relative cell counts (ratios) in the final-data 
