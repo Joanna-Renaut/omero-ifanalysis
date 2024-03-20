@@ -16,7 +16,7 @@ Install via
 
 Next:
 
-    pip install scipy
+    pip install requirements.txt
     
 Create 3 directories, one for each biological repeat call these:
     
