@@ -8,7 +8,6 @@ from pathlib import Path
 from ifanalysis.normalisation import normalise
 from ifanalysis.sl_analysis import combplot_hist, intensity_plot
 from ifanalysis._helper_functions import save_fig
-
 STYLE = Path('~/matplotlib_style/Style_01.mplstyle')
 plt.style.use(STYLE)
 prop_cycle = plt.rcParams["axes.prop_cycle"]
@@ -55,7 +54,7 @@ if __name__ == '__main__':
 
         CONTROL_GENOTYPE = 'WT'
         SELECTED_CONDITIONS = []
-        ALL_CONTROLS = ['DMSO']  # enter your controls here in the order you would like them in figures
+        ALL_CONTROLS = ['NT', 'Pool', 'iMAX only', 'RAD51', 'BCL2']  # enter your controls here in the order you would like them in figures
         INTENSITY_PLOT_COLUMNS = []  # enter your column names for the different stains for an intensity plot
         RATIO_THRESHOLD = 0.7  # set the threshold for ratios shown on plot for relative cell counts
 
@@ -134,10 +133,18 @@ if __name__ == '__main__':
             combplot_hist(df1_cc, selected_conds, 'CellCycle Histogram, WT')
             combplot_hist(df2_cc, selected_conds, f'CellCycle Histogram, {genotype}')
 
-            sorted_values = sorted(final_plot_df.condition.unique(), key=custom_sort)
+            # calculate the mean 'ratio' for each 'condition'
+            condition_means = final_plot_df.groupby('condition')['ratio'].mean().to_frame().reset_index()
+            # print(condition_means)
+
+            # filter `final_plot_df` based on whether the 'condition' group's mean 'ratio' is below the threshold
+            filtered_df = final_plot_df[final_plot_df['condition'].isin(condition_means['condition'])]
+            print(filtered_df)
+
+            sorted_values = sorted(filtered_df.condition.unique(), key=custom_sort)
 
             fig, ax = plt.subplots(figsize=(6, 6))
-            sns.barplot(x='condition', y='abs_cell_count', hue='genotype', data=final_plot_df, ax=ax,
+            sns.barplot(x='condition', y='abs_cell_count', hue='genotype', data=filtered_df, ax=ax,
                         hue_order=hue_order, order=sorted_values)
             plt.xticks(rotation=90)
             ax.legend(loc='upper right')
@@ -152,9 +159,10 @@ if __name__ == '__main__':
 
                 # Check if positions and subset lengths match before plotting
                 if not subset.empty and len(positions) == len(subset):
+
                     # Correctly calculate positions for this genotype's bars
                     positions = np.arange(len(sorted_values)) + (
-                        i - len(hue_order) / 2.0) * 0.2  # Adjust the 0.2 if necessary to align with your bar width
+                            i - len(hue_order) / 2.0) * 0.2  # Adjust the 0.2 if necessary to align with your bar width
                     # Plot error bars
                     plt.errorbar(positions, subset['abs_cell_count'], yerr=subset['abs_cell_count_sem'], fmt='none',
                                  color='black', capsize=3, elinewidth=1)
@@ -164,11 +172,14 @@ if __name__ == '__main__':
 
             # Sort by condition using custom_sort for plotting
             sorted_conditions = sorted(final_plot_df['condition'].unique(), key=custom_sort)
+
             final_plot_df['condition'] = pd.Categorical(final_plot_df['condition'], categories=sorted_conditions,
                                                         ordered=True)
             final_plot_df.sort_values(by=['condition', 'genotype'], inplace=True)
 
             final_genotype = final_plot_df[final_plot_df['genotype'] == genotype].copy()
+
+            final_genotype = final_genotype[final_genotype['condition'] != "XPO5"]
 
             bar_colors = [colors[1] if ratio < RATIO_THRESHOLD else colors[0] for ratio in
                           final_genotype.groupby('condition', observed=True)['ratio'].mean()]
@@ -235,27 +246,23 @@ if __name__ == '__main__':
 
     # Initialize a list to store t-test results
     t_test_results = []
-    # Iterate over each experiment
-    for experiment in analyses_data['experiment'].unique():
-        experiment_data = analyses_data[analyses_data['experiment'] == experiment]
-        # Identify all unique conditions within this experiment
-        conditions = experiment_data['condition'].unique()
+    # Identify all unique conditions
+    conditions = analyses_data['condition'].unique()
 
-        # Generate all possible pairs of conditions
-        for condition1, condition2 in combinations(conditions, 2):
-            # Extract the abs_cell_count for each condition
-            data1 = experiment_data[experiment_data['condition'] == condition1]['abs_cell_count']
-            data2 = experiment_data[experiment_data['condition'] == condition2]['abs_cell_count']
+    # Generate all possible pairs of conditions
+    for condition1, condition2 in combinations(conditions, 2):
+        # Extract the abs_cell_count for each condition across all experiments
+        data1 = analyses_data[analyses_data['condition'] == condition1]['abs_cell_count']
+        data2 = analyses_data[analyses_data['condition'] == condition2]['abs_cell_count']
 
-            # Perform t-test between the two conditions
-            t_stat, p_val = ttest_ind(data1, data2, equal_var=False)  # assuming unequal variance
+        # Perform t-test between the two conditions across all experiments
+        t_stat, p_val = ttest_ind(data1, data2, equal_var=False)  # assuming unequal variance
 
-            # Store the result
-            t_test_results.append({
-                'experiment': experiment,
-                'condition_pair': f"{condition1} vs {condition2}",
-                'p_value': p_val
-            })
+        # Store the result
+        t_test_results.append({
+            'condition_pair': f"{condition1} vs {condition2}",
+            'p_value': p_val
+        })
 
     # Convert the list of results into a DataFrame
     p_values_df = pd.DataFrame(t_test_results)
