@@ -35,13 +35,6 @@ def plot_ratios_with_error_bars(data, ratio_threshold, control_genotype, ko_geno
         wt_values = combined_data[(combined_data['condition'] == condition) &
                                   (combined_data['genotype'] == control_genotype)]['normalized_count']
 
-        # # Add a small amount of noise to avoid precision loss (not recommended but can bypass the warning)
-        # ko_values += np.random.normal(0, 1e-8, ko_values.shape)
-        # wt_values += np.random.normal(0, 1e-8, wt_values.shape)
-        print(f"Condition: {condition}")  # Debugging: Print condition
-        print(f"KO values: {ko_values.tolist()}")  # Debugging: Print KO values
-        print(f"WT values: {wt_values.tolist()}")  # Debugging: Print WT values
-
         if len(ko_values) > 1 and len(wt_values) > 1:  # Ensure there are enough data points
             _, p_value = ttest_ind(ko_values, wt_values, equal_var=False)
             if np.isnan(p_value):  # Check if precision loss occurred
@@ -52,18 +45,11 @@ def plot_ratios_with_error_bars(data, ratio_threshold, control_genotype, ko_geno
         else:
             p_values.append(np.nan)  # Append NaN if there's not enough data
 
-    # test p-values for code testing
-    # p_values = [0.0001, 0.005, 0.03, 0.2, 0.04, 0.02, 0.0005, 0.07, 0.15, 0.001]
-
     # Sort conditions: controls first, then others alphabetically
     sorted_conditions = all_controls + sorted([cond for cond in data['condition'].unique() if cond not in all_controls])
 
     # Reorder data based on sorted conditions
     data = data.set_index('condition').loc[sorted_conditions].reset_index()
-
-    # Print data and p-values for debugging
-    # print(data.head(70))
-    print(p_values)
 
     # Plot
     plt.figure(figsize=(12, 8))
@@ -118,7 +104,6 @@ if __name__ == '__main__':
     KO_GENOTYPES = ['GENE1', 'GENE2']  # List of KO genotypes
     MAIN_CONTROL = 'NT'
     ALL_CONTROLS = ['NT', 'DMSO']  # enter your controls here in the order you would like them in figures
-    INTENSITY_PLOT_COLUMNS = []  # enter your column names for the different stains for an intensity plot
     RATIO_THRESHOLD = 0.7  # set the threshold for ratios shown on plot for relative cell counts
 
     for repeat_folder in bio_repeat_folders:
