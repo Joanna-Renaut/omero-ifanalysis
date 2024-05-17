@@ -1,20 +1,12 @@
 # IF OMERO Analysis Pipeline
 
-### IFAnalysis
-
-First get the IFAnalysis pipeline by Helfrid Hocchegger: https://github.com/HocheggerLab/IFanalysis
-
 Create your virtual environment e.g for mac:
 
     python<version> -m venv venv
 
     source venv/bin/activate
 
-Install via
-
-    pip install -e <path to IFAnalysis folder on computer>
-
-Next:
+Install:
 
     pip install requirements.txt
     
@@ -28,10 +20,17 @@ Create 3 directories, one for each biological repeat call these:
 
 place your Omero final data files in the appropriate folder.
 
-In the code on line 65, enter your control conditions in the order you would like them to appear in figures.
+In the code on line 117, enter your control genotype e.g. 'WT'
+on 118 enter your knockout genotype(s) e.g. ['BRCA', 'BRAF'], on 119 enter your main control e.g. 'NT'
+on 120 enter all your controls in the order you would like them to appear in figures. Finally on 121 enter the 
+threshold you'd like your plot bars to change colour to signify a good ratio of knockdown, e.g. 0.7
 
 Run the analysis.
 
-You will have multiple figures, a final csv of the abs cell counts and relative cell counts (ratios) in the final-data 
-folder. A final stats file with the p-values for each repeat and a csv for means and std deviations for abs 
-cell count and relative cell counts (ratios) in the stats folder.
+### Results output
+You will have:
+
+- a ratio figure per KO genotype
+- a final csv of the normalised absolute cell count per condition / per genotype with the average ratio across 
+- repeats and the sem.
+- a p-values file showing the statistics using a Welsch's t-test.
